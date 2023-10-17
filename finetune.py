@@ -14,6 +14,14 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_error
 
 from dataset.dataset_test import MolTestDatasetWrapper
+from tap import Tap
+
+
+class FinetuneArgs(Tap):
+    config_file: str = 'config_finetune.yaml'
+    """The config file for finetuning."""
+    seed: int = 0
+    """The random seed for data splitting."""
 
 
 apex_support = False
@@ -99,8 +107,7 @@ class FineTune(object):
         return loss
 
     def train(self):
-        train_loader, valid_loader, test_loader = self.dataset.get_data_loaders()
-
+        train_loader, valid_loader, test_loader, df_train, df_valid, df_test = self.dataset.get_data_loaders()
         self.normalizer = None
         if self.config["task_name"] in ['qm7', 'qm9']:
             labels = []
@@ -139,7 +146,9 @@ class FineTune(object):
             )
 
         model_checkpoints_folder = os.path.join(self.writer.log_dir, 'checkpoints')
-
+        df_train.to_csv(f'{self.writer.log_dir}/train.csv', index=False)
+        df_valid.to_csv(f'{self.writer.log_dir}/valid.csv', index=False)
+        df_test.to_csv(f'{self.writer.log_dir}/test.csv', index=False)
         # save config file
         _save_config_file(model_checkpoints_folder)
 
@@ -170,7 +179,7 @@ class FineTune(object):
                 n_iter += 1
 
             # validate the model if requested
-            if epoch_counter % self.config['eval_every_n_epochs'] == 0:
+            if epoch_counter % self.config['eval_every_n_epochs'] == 0 and len(valid_loader) > 0:
                 if self.config['dataset']['task'] == 'classification': 
                     valid_loss, valid_cls = self._validate(model, valid_loader)
                     if valid_cls > best_valid_cls:
@@ -186,7 +195,8 @@ class FineTune(object):
 
                 self.writer.add_scalar('validation_loss', valid_loss, global_step=valid_n_iter)
                 valid_n_iter += 1
-        
+        if not os.path.exists(os.path.join(model_checkpoints_folder, 'model.pth')):
+            torch.save(model.state_dict(), os.path.join(model_checkpoints_folder, 'model.pth'))
         self._test(model, test_loader)
 
     def _load_pre_trained_weights(self, model):
@@ -303,12 +313,14 @@ class FineTune(object):
             else:
                 self.rmse = mean_squared_error(labels, predictions, squared=False)
                 print('Test loss:', test_loss, 'Test RMSE:', self.rmse)
-
+            df_pred = pd.DataFrame({'target': labels, 'prediction': predictions})
         elif self.config['dataset']['task'] == 'classification': 
             predictions = np.array(predictions)
             labels = np.array(labels)
             self.roc_auc = roc_auc_score(labels, predictions[:,1])
             print('Test loss:', test_loss, 'Test ROC AUC:', self.roc_auc)
+            df_pred = pd.DataFrame({'target': labels, 'prediction': predictions[:,1]})
+        df_pred.to_csv(f'{self.writer.log_dir}/pred.csv', index=False)
 
 
 def main(config):
@@ -327,7 +339,9 @@ def main(config):
 
 
 if __name__ == "__main__":
-    config = yaml.load(open("config_finetune.yaml", "r"), Loader=yaml.FullLoader)
+    args = FinetuneArgs().parse_args()
+    np.random.seed(args.seed)
+    config = yaml.load(open(args.config_file, "r"), Loader=yaml.FullLoader)
 
     if config['task_name'] == 'BBBP':
         config['dataset']['task'] = 'classification'

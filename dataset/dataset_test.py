@@ -4,7 +4,7 @@ import math
 import time
 import random
 import numpy as np
-
+import pandas as pd
 import torch
 import torch.nn.functional as F
 from torch.utils.data.sampler import SubsetRandomSampler
@@ -186,10 +186,11 @@ class MolTestDatasetWrapper(object):
 
     def get_data_loaders(self):
         train_dataset = MolTestDataset(data_path=self.data_path, target=self.target, task=self.task)
-        train_loader, valid_loader, test_loader = self.get_train_validation_data_loaders(train_dataset)
-        return train_loader, valid_loader, test_loader
+        train_loader, valid_loader, test_loader, df_train, df_valid, df_test = self.get_train_validation_data_loaders(
+            train_dataset, data_path=self.data_path)
+        return train_loader, valid_loader, test_loader, df_train, df_valid, df_test
 
-    def get_train_validation_data_loaders(self, train_dataset):
+    def get_train_validation_data_loaders(self, train_dataset, data_path: str):
         if self.splitting == 'random':
             # obtain training indices that will be used for validation
             num_train = len(train_dataset)
@@ -202,7 +203,10 @@ class MolTestDatasetWrapper(object):
         
         elif self.splitting == 'scaffold':
             train_idx, valid_idx, test_idx = scaffold_split(train_dataset, self.valid_size, self.test_size)
-
+        df = pd.read_csv(data_path)
+        df_train = df[df.index.isin(train_idx)]
+        df_valid = df[df.index.isin(valid_idx)]
+        df_test = df[df.index.isin(test_idx)]
         # define samplers for obtaining training and validation batches
         train_sampler = SubsetRandomSampler(train_idx)
         valid_sampler = SubsetRandomSampler(valid_idx)
@@ -221,4 +225,4 @@ class MolTestDatasetWrapper(object):
             num_workers=self.num_workers, drop_last=False
         )
 
-        return train_loader, valid_loader, test_loader
+        return train_loader, valid_loader, test_loader, df_train, df_valid, df_test
