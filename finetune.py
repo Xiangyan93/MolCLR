@@ -22,6 +22,8 @@ class FinetuneArgs(Tap):
     """The config file for finetuning."""
     seed: int = 0
     """The random seed for data splitting."""
+    save_dir: str = None
+    """The directory to save the results."""
 
 
 apex_support = False
@@ -69,9 +71,12 @@ class FineTune(object):
         self.config = config
         self.device = self._get_device()
 
-        current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-        dir_name = current_time + '_' + config['task_name'] + '_' + config['dataset']['target']
-        log_dir = os.path.join('finetune', dir_name)
+        if self.config.get('save_dir') is not None:
+            log_dir = self.config.get('save_dir')
+        else:
+            current_time = datetime.now().strftime('%b%d_%H-%M-%S')
+            dir_name = current_time + '_' + config['task_name'] + '_' + config['dataset']['target']
+            log_dir = os.path.join('finetune', dir_name)
         self.writer = SummaryWriter(log_dir=log_dir)
         self.dataset = dataset
         if config['dataset']['task'] == 'classification':
@@ -342,6 +347,8 @@ if __name__ == "__main__":
     args = FinetuneArgs().parse_args()
     np.random.seed(args.seed)
     config = yaml.load(open(args.config_file, "r"), Loader=yaml.FullLoader)
+    if args.save_dir is not None:
+        config['save_dir'] = args.save_dir
 
     if config['task_name'] == 'BBBP':
         config['dataset']['task'] = 'classification'
