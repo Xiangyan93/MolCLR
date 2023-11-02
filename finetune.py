@@ -325,7 +325,8 @@ class FineTune(object):
             self.roc_auc = roc_auc_score(labels, predictions[:,1])
             print('Test loss:', test_loss, 'Test ROC AUC:', self.roc_auc)
             df_pred = pd.DataFrame({'target': labels, 'prediction': predictions[:,1]})
-        df_pred.to_csv(f'{self.writer.log_dir}/pred.csv', index=False)
+        target = self.config['dataset']['target']
+        df_pred.to_csv(f'{self.writer.log_dir}/prediction_{target}.csv', index=False)
 
 
 def main(config):
