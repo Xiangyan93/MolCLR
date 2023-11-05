@@ -318,7 +318,7 @@ class FineTune(object):
             else:
                 self.rmse = mean_squared_error(labels, predictions, squared=False)
                 print('Test loss:', test_loss, 'Test RMSE:', self.rmse)
-            df_pred = pd.DataFrame({'target': labels, 'prediction': predictions})
+            df_pred = pd.DataFrame({'target': labels, 'prediction': predictions.ravel()})
         elif self.config['dataset']['task'] == 'classification': 
             predictions = np.array(predictions)
             labels = np.array(labels)
