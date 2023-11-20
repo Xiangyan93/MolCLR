@@ -11,6 +11,14 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from utils.nt_xent import NTXentLoss
+from tap import Tap
+
+
+class MolCLRArgs(Tap):
+    config_file: str = 'config.yaml'
+    """The config file for finetuning."""
+    save_dir: str = None
+    """The directory to save the results."""
 
 
 apex_support = False
@@ -34,9 +42,12 @@ class MolCLR(object):
     def __init__(self, dataset, config):
         self.config = config
         self.device = self._get_device()
-        
-        dir_name = datetime.now().strftime('%b%d_%H-%M-%S')
-        log_dir = os.path.join('ckpt', dir_name)
+
+        if self.config.get('save_dir') is not None:
+            log_dir = self.config.get('save_dir')
+        else:
+            dir_name = datetime.now().strftime('%b%d_%H-%M-%S')
+            log_dir = os.path.join('ckpt', dir_name)
         self.writer = SummaryWriter(log_dir=log_dir)
 
         self.dataset = dataset
@@ -178,8 +189,10 @@ class MolCLR(object):
 
 
 def main():
+    args = MolCLRArgs().parse_args()
     config = yaml.load(open("config.yaml", "r"), Loader=yaml.FullLoader)
-    print(config)
+    if args.save_dir is not None:
+        config['save_dir'] = args.save_dir
 
     if config['aug'] == 'node':
         from dataset.dataset import MoleculeDatasetWrapper
