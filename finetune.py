@@ -15,6 +15,7 @@ from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_err
 
 from dataset.dataset_test import MolTestDatasetWrapper
 from tap import Tap
+from typing import Literal
 
 
 class FinetuneArgs(Tap):
@@ -24,6 +25,12 @@ class FinetuneArgs(Tap):
     """The random seed for data splitting."""
     save_dir: str = None
     """The directory to save the results."""
+    task_name: str = None
+    """The name of the data set."""
+    fine_tune_from: str = None
+    """sub directory of pre-trained model in ./ckpt"""
+    splitting: Literal['random', 'scaffold'] = None
+    """The splitting method for data splitting."""
 
 
 apex_support = False
@@ -350,6 +357,12 @@ if __name__ == "__main__":
     config = yaml.load(open(args.config_file, "r"), Loader=yaml.FullLoader)
     if args.save_dir is not None:
         config['save_dir'] = args.save_dir
+    if args.task_name is not None:
+        config['task_name'] = args.task_name
+    if args.splitting is not None:
+        config['splitting'] = args.splitting
+    if args.fine_tune_from is not None:
+        config['fine_tune_from'] = args.fine_tune_from
 
     if config['task_name'] == 'BBBP':
         config['dataset']['task'] = 'classification'

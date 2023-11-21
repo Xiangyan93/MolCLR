@@ -19,6 +19,8 @@ class MolCLRArgs(Tap):
     """The config file for finetuning."""
     save_dir: str = None
     """The directory to save the results."""
+    data_path: str = None
+    """The path to the data."""
 
 
 apex_support = False
@@ -193,6 +195,8 @@ def main():
     config = yaml.load(open("config.yaml", "r"), Loader=yaml.FullLoader)
     if args.save_dir is not None:
         config['save_dir'] = args.save_dir
+    if args.data_path is not None:
+        config['dataset']['data_path'] = args.data_path
 
     if config['aug'] == 'node':
         from dataset.dataset import MoleculeDatasetWrapper
