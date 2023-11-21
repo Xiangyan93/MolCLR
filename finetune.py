@@ -15,7 +15,6 @@ from sklearn.metrics import roc_auc_score, mean_squared_error, mean_absolute_err
 
 from dataset.dataset_test import MolTestDatasetWrapper
 from tap import Tap
-from typing import Literal
 
 
 class FinetuneArgs(Tap):
@@ -29,7 +28,7 @@ class FinetuneArgs(Tap):
     """The name of the data set."""
     fine_tune_from: str = None
     """sub directory of pre-trained model in ./ckpt"""
-    splitting: Literal['random', 'scaffold'] = None
+    splitting: str = None
     """The splitting method for data splitting."""
 
 

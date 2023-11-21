@@ -21,6 +21,8 @@ class MolCLRArgs(Tap):
     """The directory to save the results."""
     data_path: str = None
     """The path to the data."""
+    aug: str = None
+    """The augmentation type."""
 
 
 apex_support = False
@@ -197,6 +199,8 @@ def main():
         config['save_dir'] = args.save_dir
     if args.data_path is not None:
         config['dataset']['data_path'] = args.data_path
+    if args.aug is not None:
+        config['aug'] = args.aug
 
     if config['aug'] == 'node':
         from dataset.dataset import MoleculeDatasetWrapper
