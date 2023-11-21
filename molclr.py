@@ -194,7 +194,7 @@ class MolCLR(object):
 
 def main():
     args = MolCLRArgs().parse_args()
-    config = yaml.load(open("config.yaml", "r"), Loader=yaml.FullLoader)
+    config = yaml.load(open(args.config_file, "r"), Loader=yaml.FullLoader)
     if args.save_dir is not None:
         config['save_dir'] = args.save_dir
     if args.data_path is not None:
